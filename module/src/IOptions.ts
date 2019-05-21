@@ -8,19 +8,27 @@ export interface IOptions extends IModuleOptions {
 
 }
 
-export interface ILimit {
-
-    limit: number
-    interval: number
-    spread?: number | "auto"
-    reserve?: number
-
+export interface ILimit extends IFrequency{
+    start?:number
 }
 
 export interface ILimits {
     key: string,
     limits: ILimit[]
+}
 
+export interface IFrequency {
+
+    limit: number
+    interval: number
+    spread?: number | boolean
+    reserve?: number
+
+}
+
+export interface IFrequencies {
+    key: string,
+    limits: IFrequency[]
 }
 
 export interface IResult {
@@ -28,6 +36,7 @@ export interface IResult {
     remaining: number,
     limit: number,
     rate: number,
+    rateLimit: number,
     isValid: boolean,
     reset: number,
     retry: number

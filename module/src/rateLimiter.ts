@@ -1,18 +1,26 @@
 import {define, inject, injectFactoryMethod, singleton} from "appolo";
-import {ILimit, ILimits, IOptions, IResult, IResults} from "./IOptions";
+import {IFrequency, IFrequencies, IOptions, IResult, IResults, ILimits} from "./IOptions";
 import {RedisProvider} from "@appolo/redis";
 import * as Q from "bluebird";
 import * as _ from "lodash";
-import {Util} from "./Util";
+import {Util} from "./util";
 
 interface ISlidingWindowParams {
     window: number,
     interval: number,
     limit: number,
     reserve: number,
-    spread: string,
+    rateLimit: string,
     check: boolean
+    maxWindow?: number
 }
+
+interface IRunParams {
+    limits: ILimits,
+    check: boolean,
+    limit: boolean
+}
+
 
 @define()
 @singleton()
@@ -21,12 +29,31 @@ export class RateLimiter {
     @inject() private moduleOptions: IOptions;
     @inject() private redisProvider: RedisProvider;
 
-    public async reserve(limits: ILimits) {
+    public async frequencyCap(limits: IFrequencies) {
 
+        return this._run({limits, check: false, limit: false})
+    }
 
-        let key = `${this.moduleOptions.keyPrefix}:{${limits.key}}`;
+    public async frequencyCheck(limits: IFrequencies) {
 
-        let params = this._prepareSlidingWindowParams(limits);
+        return this._run({limits, check: true, limit: false})
+    }
+
+    public async limitCap(limits: ILimits) {
+
+        return this._run({limits, check: false, limit: true})
+    }
+
+    public async limitCheck(limits: ILimits) {
+
+        return this._run({limits, check: true, limit: true})
+    }
+
+    private async _run(opts: IRunParams): Promise<IResults> {
+
+        let key = `${this.moduleOptions.keyPrefix}:${opts.limit ? "lmt" : "frq"}:{${opts.limits.key}}`;
+
+        let params = this._prepareSlidingWindowParams(opts);
 
         let results = await this.redisProvider.runScript<number[][]>("slidingWindow", [key], [JSON.stringify(params)], false);
 
@@ -35,12 +62,31 @@ export class RateLimiter {
         return dto;
     }
 
-    public async check(limits: ILimit[]) {
+    private _prepareSlidingWindowParams(opts: IRunParams): ISlidingWindowParams[] {
 
+        let dto: ISlidingWindowParams[] = [];
 
+        for (let i = 0, len = opts.limits.limits.length; i < len; i++) {
+
+            let item = opts.limits.limits[i];
+
+            let [bucketSize, spread] = this._calcBacketSizeAndSpread(item);
+
+            dto.push({
+                window: bucketSize,
+                interval: item.interval,
+                limit: item.limit,
+                reserve: item.reserve || 1,
+                rateLimit: spread.toString(),
+                check: opts.check,
+                maxWindow: opts.limit ? (item.start || Date.now() + item.interval) : 0
+            });
+        }
+
+        return dto;
     }
 
-    private _prepareResults(params: ISlidingWindowParams[], results: (number | string)[][]): IResults {
+    private _prepareResults(params: ISlidingWindowParams[], results: (any)[][]): IResults {
 
         let isValid: boolean = true;
 
@@ -50,13 +96,14 @@ export class RateLimiter {
             let item = results[i], param = params[i];
 
             dto.push({
-                current: item[0] as number,
-                remaining: param.limit - (item[0] as number),
+                current: item[0],
+                remaining: param.limit - (item[0]),
                 limit: param.limit,
-                rate: (param.interval * parseFloat(item[1] as string)) / param.window,
+                rateLimit: parseFloat(param.rateLimit),
+                rate: parseFloat(item[1]),
                 isValid: !!item[2],
-                reset: item[3] as number,
-                retry: item[4] as number
+                reset: item[3],
+                retry: item[4]
             });
 
             if (!item[2]) {
@@ -70,27 +117,9 @@ export class RateLimiter {
         };
     }
 
-    private _prepareSlidingWindowParams(limits: ILimits, check: boolean = false): ISlidingWindowParams[] {
-        let dto = _.map(limits.limits, item => {
 
-            let [bucketSize, spread] = this._calcBacketSizeAndSpread(item);
-
-            return {
-                window: bucketSize,
-                interval: item.interval,
-                limit: item.limit,
-                reserve: item.reserve || 1,
-                spread:spread.toString(),
-                check: check
-
-            }
-        });
-
-        return dto;
-    }
-
-    private _calcBacketSizeAndSpread(limit: ILimit): [number, number] {
-        let spread: number = 0;
+    private _calcBacketSizeAndSpread(limit: IFrequency): [number, number] {
+        let rateLimit: number = 0;
 
         let bucketSize = Math.floor(limit.interval / 60);
 
@@ -98,10 +127,14 @@ export class RateLimiter {
 
             bucketSize = Math.max(bucketSize, Math.floor(limit.interval / limit.limit));
 
-            spread = limit.spread == "auto" ? Util.toFixed((limit.limit / limit.interval) * bucketSize, 2) : limit.spread
+            rateLimit = typeof limit.spread == "boolean" ? Util.toFixed((limit.limit / limit.interval) * bucketSize, 2) : limit.spread;
         }
 
-        return [bucketSize, spread]
+        return [bucketSize, rateLimit]
+    }
+
+    public async clear(key: string) {
+        await this.redisProvider.delPattern(`${this.moduleOptions.keyPrefix}*{${key}}*`)
     }
 
 }

@@ -13,11 +13,10 @@ for i, item in ipairs(limits) do
 
     local currentWindow = math.floor(mili / item.window) * item.window
 
-    local startWindow = mili - (item.interval)
-
     local lastUpdate = tonumber(redis.call("HGET", hashKey, "lastUpdate") or '0')
 
-    if currentWindow > lastUpdate then
+    if (currentWindow > lastUpdate and item.maxWindow == 0) then
+        local startWindow = mili - (item.interval)
         local expiredBuckets = redis.call("ZREVRANGEBYSCORE", setKey, startWindow, "-inf")
 
         if #expiredBuckets > 0 then
@@ -39,34 +38,48 @@ for i, item in ipairs(limits) do
         isValid = false;
     end
 
-    local spread =  tonumber(item.spread)
+    local rateLimit = tonumber(item.rateLimit)
 
-    if spread > 0 then
+    if rateLimit > 0 then
 
         local prevBucketCounter = tonumber(redis.call("HGET", hashKey, currentWindow - item.window) or '0');
         local currentBucketCounter = tonumber(redis.call("HGET", hashKey, currentWindow) or '0');
         rate = ((prevBucketCounter * ((item.window - (mili - currentWindow)) / item.window)) + (currentBucketCounter));
 
-        if (rate > spread or currentBucketCounter >= spread) then
+        if (rate > rateLimit or currentBucketCounter >= rateLimit) then
             isValid = false
         end
     end
-
+local test = false;
     if isValid == true and not item.check then
 
         if currentWindow > lastUpdate then
+
+            local expire = item.interval;
+            local shouldExpire = true;
+
+            if item.maxWindow > 0 then
+                shouldExpire = redis.call("PTTL", setKey) <= 0
+                expire =  item.maxWindow - mili
+            end
+
             redis.call("ZADD", setKey, currentWindow, currentWindow)
-            redis.call("HSET", hashKey, "lastUpdate", mili)
-            redis.call("PEXPIRE", setKey, item.interval)
-            lastUpdate = mili;
-            redis.call("PEXPIRE", hashKey, item.interval)
+
+            if shouldExpire then
+                test = true
+                redis.call("HSET", hashKey, "lastUpdate", mili)
+                lastUpdate = mili;
+                redis.call("PEXPIRE", setKey, expire)
+                redis.call("PEXPIRE", hashKey, expire)
+            end
+
         end
 
         redis.call("HINCRBY", hashKey, currentWindow, item.reserve)
         count = redis.call("HINCRBY", hashKey, "counter", item.reserve)
     end
 
-    table.insert(output, { count, tostring(rate), isValid, (item.interval + lastUpdate) - mili, item.window + currentWindow - mili,tostring(count/(item.interval/item.window))})
+    table.insert(output, { count, tostring(rate), isValid, (item.interval + lastUpdate) - mili, item.window + currentWindow - mili,test })
 
     if not isValid then
         break
