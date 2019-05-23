@@ -79,7 +79,7 @@ reserve key using sliding window
     - `rateLimit` -  if spread defined the rate limit per bucket
     - `rate` - if spread defined  - current rate
     - `reset` - the number of milisec until the limit will reset to its maximum capacity
-    - `retry` - the number of seconds until bucket reset
+    - `retry` - the number of milisec until bucket reset
 
 ```typescript
 import {define, singleton,inject} from 'appolo'
