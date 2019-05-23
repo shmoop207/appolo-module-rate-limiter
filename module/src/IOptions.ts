@@ -4,12 +4,13 @@ import Timer = NodeJS.Timer;
 export interface IOptions extends IModuleOptions {
     id?: string
     connection?: string;
-    keyPrefix?: string
-
+    keyPrefix?: string;
+    maxBuckets?: number
+    minBucketInterval?: number
 }
 
-export interface ILimit extends IFrequency{
-    start?:number
+export interface ILimit extends IFrequency {
+    start?: number
 }
 
 export interface ILimits {
@@ -22,6 +23,7 @@ export interface IFrequency {
     limit: number
     interval: number
     spread?: number | boolean
+    bucket?: number
     reserve?: number
 
 }
@@ -32,7 +34,8 @@ export interface IFrequencies {
 }
 
 export interface IResult {
-    current: number,
+    count: number,
+    bucket: number,
     remaining: number,
     limit: number,
     rate: number,

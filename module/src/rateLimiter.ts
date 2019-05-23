@@ -1,9 +1,10 @@
 import {define, inject, injectFactoryMethod, singleton} from "appolo";
-import {IFrequency, IFrequencies, IOptions, IResult, IResults, ILimits} from "./IOptions";
+import {IFrequency, IFrequencies, IOptions, IResult, IResults, ILimits, ILimit} from "./IOptions";
 import {RedisProvider} from "@appolo/redis";
 import * as Q from "bluebird";
 import * as _ from "lodash";
 import {Util} from "./util";
+import {WindowCalculator} from "./windowCalculator";
 
 interface ISlidingWindowParams {
     window: number,
@@ -16,7 +17,8 @@ interface ISlidingWindowParams {
 }
 
 interface IRunParams {
-    limits: ILimits,
+    limits: ILimit[],
+    key: string,
     check: boolean,
     limit: boolean
 }
@@ -28,30 +30,25 @@ export class RateLimiter {
 
     @inject() private moduleOptions: IOptions;
     @inject() private redisProvider: RedisProvider;
+    @inject() private windowCalculator: WindowCalculator;
 
-    public async frequencyCap(limits: IFrequencies) {
-
-        return this._run({limits, check: false, limit: false})
+    public get frequency() {
+        return {
+            reserve: (key: string, limits: IFrequency[]) => this._run({key, limits, check: false, limit: false}),
+            check: (key: string, limits: IFrequency[]) => this._run({key, limits, check: true, limit: false})
+        }
     }
 
-    public async frequencyCheck(limits: IFrequencies) {
-
-        return this._run({limits, check: true, limit: false})
-    }
-
-    public async limitCap(limits: ILimits) {
-
-        return this._run({limits, check: false, limit: true})
-    }
-
-    public async limitCheck(limits: ILimits) {
-
-        return this._run({limits, check: true, limit: true})
+    public get limit() {
+        return {
+            reserve: (key: string, limits: IFrequency[]) => this._run({key, limits, check: false, limit: true}),
+            check: (key: string, limits: IFrequency[]) => this._run({key, limits, check: true, limit: true})
+        }
     }
 
     private async _run(opts: IRunParams): Promise<IResults> {
 
-        let key = `${this.moduleOptions.keyPrefix}:${opts.limit ? "lmt" : "frq"}:{${opts.limits.key}}`;
+        let key = `${this.moduleOptions.keyPrefix}:${opts.limit ? "lmt" : "frq"}:{${opts.key}}`;
 
         let params = this._prepareSlidingWindowParams(opts);
 
@@ -66,14 +63,14 @@ export class RateLimiter {
 
         let dto: ISlidingWindowParams[] = [];
 
-        for (let i = 0, len = opts.limits.limits.length; i < len; i++) {
+        for (let i = 0, len = opts.limits.length; i < len; i++) {
 
-            let item = opts.limits.limits[i];
+            let item = opts.limits[i];
 
-            let [bucketSize, spread] = this._calcBacketSizeAndSpread(item);
+            let {bucket, spread} = this._calcBucketIntervalAndSpread(item);
 
             dto.push({
-                window: bucketSize,
+                window: bucket,
                 interval: item.interval,
                 limit: item.limit,
                 reserve: item.reserve || 1,
@@ -96,7 +93,8 @@ export class RateLimiter {
             let item = results[i], param = params[i];
 
             dto.push({
-                current: item[0],
+                count: item[0],
+                bucket: param.window,
                 remaining: param.limit - (item[0]),
                 limit: param.limit,
                 rateLimit: parseFloat(param.rateLimit),
@@ -117,20 +115,15 @@ export class RateLimiter {
         };
     }
 
+    private _calcBucketIntervalAndSpread(frequency: IFrequency): { bucket: number, spread: number } {
 
-    private _calcBacketSizeAndSpread(limit: IFrequency): [number, number] {
-        let rateLimit: number = 0;
+        let {interval, limit, spread, bucket} = frequency;
 
-        let bucketSize = Math.floor(limit.interval / 60);
+        bucket = this.windowCalculator.calcBucketInterval({interval, limit, spread, bucket});
 
-        if (limit.spread) {
+        spread = this.windowCalculator.calcRateLimit({interval, limit, spread, bucket});
 
-            bucketSize = Math.max(bucketSize, Math.floor(limit.interval / limit.limit));
-
-            rateLimit = typeof limit.spread == "boolean" ? Util.toFixed((limit.limit / limit.interval) * bucketSize, 2) : limit.spread;
-        }
-
-        return [bucketSize, rateLimit]
+        return {bucket, spread}
     }
 
     public async clear(key: string) {

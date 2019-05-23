@@ -9,7 +9,9 @@ export class RateLimiterModule extends Module<IOptions> {
 
     protected readonly Defaults = <Partial<IOptions>>{
         id: "rateLimiter",
-        keyPrefix: "rl"
+        keyPrefix: "rl",
+        maxBuckets: 600,
+        minBucketInterval: 5000
 
     };
 

@@ -2,22 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const appolo_1 = require("appolo");
-const util_1 = require("./util");
 let RateLimiter = class RateLimiter {
-    async frequencyCap(limits) {
-        return this._run({ limits, check: false, limit: false });
+    get frequency() {
+        return {
+            reserve: (key, limits) => this._run({ key, limits, check: false, limit: false }),
+            check: (key, limits) => this._run({ key, limits, check: true, limit: false })
+        };
     }
-    async frequencyCheck(limits) {
-        return this._run({ limits, check: true, limit: false });
-    }
-    async limitCap(limits) {
-        return this._run({ limits, check: false, limit: true });
-    }
-    async limitCheck(limits) {
-        return this._run({ limits, check: true, limit: true });
+    get limit() {
+        return {
+            reserve: (key, limits) => this._run({ key, limits, check: false, limit: true }),
+            check: (key, limits) => this._run({ key, limits, check: true, limit: true })
+        };
     }
     async _run(opts) {
-        let key = `${this.moduleOptions.keyPrefix}:${opts.limit ? "lmt" : "frq"}:{${opts.limits.key}}`;
+        let key = `${this.moduleOptions.keyPrefix}:${opts.limit ? "lmt" : "frq"}:{${opts.key}}`;
         let params = this._prepareSlidingWindowParams(opts);
         let results = await this.redisProvider.runScript("slidingWindow", [key], [JSON.stringify(params)], false);
         let dto = this._prepareResults(params, results);
@@ -25,11 +24,11 @@ let RateLimiter = class RateLimiter {
     }
     _prepareSlidingWindowParams(opts) {
         let dto = [];
-        for (let i = 0, len = opts.limits.limits.length; i < len; i++) {
-            let item = opts.limits.limits[i];
-            let [bucketSize, spread] = this._calcBacketSizeAndSpread(item);
+        for (let i = 0, len = opts.limits.length; i < len; i++) {
+            let item = opts.limits[i];
+            let { bucket, spread } = this._calcBucketIntervalAndSpread(item);
             dto.push({
-                window: bucketSize,
+                window: bucket,
                 interval: item.interval,
                 limit: item.limit,
                 reserve: item.reserve || 1,
@@ -46,7 +45,8 @@ let RateLimiter = class RateLimiter {
         for (let i = 0, len = results.length; i < len; i++) {
             let item = results[i], param = params[i];
             dto.push({
-                current: item[0],
+                count: item[0],
+                bucket: param.window,
                 remaining: param.limit - (item[0]),
                 limit: param.limit,
                 rateLimit: parseFloat(param.rateLimit),
@@ -64,14 +64,11 @@ let RateLimiter = class RateLimiter {
             isValid
         };
     }
-    _calcBacketSizeAndSpread(limit) {
-        let rateLimit = 0;
-        let bucketSize = Math.floor(limit.interval / 60);
-        if (limit.spread) {
-            bucketSize = Math.max(bucketSize, Math.floor(limit.interval / limit.limit));
-            rateLimit = typeof limit.spread == "boolean" ? util_1.Util.toFixed((limit.limit / limit.interval) * bucketSize, 2) : limit.spread;
-        }
-        return [bucketSize, rateLimit];
+    _calcBucketIntervalAndSpread(frequency) {
+        let { interval, limit, spread, bucket } = frequency;
+        bucket = this.windowCalculator.calcBucketInterval({ interval, limit, spread, bucket });
+        spread = this.windowCalculator.calcRateLimit({ interval, limit, spread, bucket });
+        return { bucket, spread };
     }
     async clear(key) {
         await this.redisProvider.delPattern(`${this.moduleOptions.keyPrefix}*{${key}}*`);
@@ -83,6 +80,9 @@ tslib_1.__decorate([
 tslib_1.__decorate([
     appolo_1.inject()
 ], RateLimiter.prototype, "redisProvider", void 0);
+tslib_1.__decorate([
+    appolo_1.inject()
+], RateLimiter.prototype, "windowCalculator", void 0);
 RateLimiter = tslib_1.__decorate([
     appolo_1.define(),
     appolo_1.singleton()

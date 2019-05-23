@@ -8,7 +8,9 @@ let RateLimiterModule = class RateLimiterModule extends appolo_1.Module {
         super(options);
         this.Defaults = {
             id: "rateLimiter",
-            keyPrefix: "rl"
+            keyPrefix: "rl",
+            maxBuckets: 600,
+            minBucketInterval: 5000
         };
     }
     get exports() {
