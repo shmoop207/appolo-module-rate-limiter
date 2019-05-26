@@ -114,7 +114,32 @@ Checks current usage of the key the counters won't be updated
 same as `Reserve` options
 #### Results  
 same as `Reserve` results
+```typescript
+import {define, singleton,inject} from 'appolo'
+import {RateLimiter} from "@appolo/rate-limiter";
 
+@define()
+@singleton()
+export class SomeManager {
+
+    @inject() rateLimiter: RateLimiter;
+
+    async checkLimits(): Promise<boolean> {
+        let result = await this.rateLimiter.check({
+            key:"someKey",
+            limits:[{
+                interval:10 * 60 * 1000, //10 min
+                limit:100,
+                spread:true,
+                reserve:100
+            }]
+        })
+
+        return result.isValid;
+    }
+}
+
+```
 ### `Cancel`
 cancel rate limit and clean all for given key
 ```typescript
