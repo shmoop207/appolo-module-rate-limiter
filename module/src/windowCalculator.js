@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const appolo_1 = require("appolo");
-const util_1 = require("./util");
+const appolo_utils_1 = require("appolo-utils");
 let WindowCalculator = class WindowCalculator {
     calcBucketInterval({ interval, limit, bucket, spread }) {
         bucket = bucket || Math.floor(interval / this.moduleOptions.maxBuckets);
@@ -15,7 +15,7 @@ let WindowCalculator = class WindowCalculator {
     calcRateLimit({ interval, limit, bucket, spread }) {
         let rateLimit = 0;
         if (spread) {
-            rateLimit = typeof spread == "boolean" ? util_1.Util.toFixed((limit / interval) * bucket, 2) : spread;
+            rateLimit = typeof spread == "boolean" ? appolo_utils_1.Util.numbers.toFixed((limit / interval) * bucket, 2) : spread;
         }
         return rateLimit;
     }

@@ -22,12 +22,12 @@ describe("Rate Limit", function () {
     it("should frequency cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
                 interval: 1000 * 60 * 5,
                 limit: 100,
                 spread: true
             }];
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), { concurrency: 100 });
+        let results = await Q.map(arr, item => handler.reserve({ key, roles }), { concurrency: 100 });
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
         results[2].isValid.should.be.eq(false);
@@ -38,32 +38,36 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(2);
         await appolo_1.Util.delay(5100);
-        let result2 = await handler.frequency.reserve(key, params);
+        let result2 = await handler.reserve({ key, roles });
         result2.isValid.should.be.eq(true);
         result2.results[0].count.should.be.eq(3);
         result2.results[0].reset.should.be.gt((1000 * 60 * 5) - 5000);
     });
     it("should frequency check", async () => {
         let key = "test";
-        let params = [{
+        let roles = [{
                 interval: 1000 * 60 * 5,
                 limit: 100,
                 spread: true
             }];
-        await handler.frequency.reserve(key, params);
-        let result = await handler.frequency.check(key, params);
+        await handler.reserve({ key, roles });
+        let result = await handler.check({ key, roles });
         result.isValid.should.be.eq(true);
         result.results[0].count.should.be.eq(1);
     });
     it("should limit cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
                 interval: 1000 * 60 * 5,
                 limit: 100,
-                spread: true
+                spread: true,
             }];
-        let results = await Q.map(arr, item => handler.limit.reserve(key, params), { concurrency: 100 });
+        let results = await Q.map(arr, item => handler.reserve({
+            key,
+            roles,
+            type: index_1.RateLimitType.FixedWindow
+        }), { concurrency: 100 });
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
         results[2].isValid.should.be.eq(false);
@@ -74,7 +78,7 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(2);
         await appolo_1.Util.delay(5100);
-        let result2 = await handler.limit.reserve(key, params);
+        let result2 = await handler.reserve({ key, roles, type: index_1.RateLimitType.FixedWindow });
         result2.isValid.should.be.eq(true);
         result2.results[0].count.should.be.eq(3);
         result2.results[0].remaining.should.be.eq(97);
@@ -83,7 +87,7 @@ describe("Rate Limit", function () {
     it("should multi frequency cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
                 interval: 1000 * 60 * 5,
                 limit: 100,
                 spread: 1.67
@@ -92,7 +96,7 @@ describe("Rate Limit", function () {
                 limit: 60,
                 spread: 1
             }];
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), { concurrency: 100 });
+        let results = await Q.map(arr, item => handler.reserve({ key, roles }), { concurrency: 100 });
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(false);
         results[2].isValid.should.be.eq(false);
@@ -107,11 +111,11 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(2);
         await appolo_1.Util.delay(1500);
-        let result2 = await handler.frequency.reserve(key, params);
+        let result2 = await handler.reserve({ key, roles });
         result2.isValid.should.be.eq(false);
         result2.results.length.should.be.eq(1);
         await appolo_1.Util.delay(3500);
-        result2 = await handler.frequency.reserve(key, params);
+        result2 = await handler.reserve({ key, roles });
         result2.results[0].count.should.be.eq(3);
         result2.results[1].count.should.be.eq(2);
         result2.results[0].remaining.should.be.eq(97);
@@ -119,11 +123,11 @@ describe("Rate Limit", function () {
     it("should  frequency cap no spread", async () => {
         let arr = Array(5).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
                 interval: 1000 * 60 * 5,
                 limit: 100
             }];
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), { concurrency: 100 });
+        let results = await Q.map(arr, item => handler.reserve({ key, roles }), { concurrency: 100 });
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
         results[4].isValid.should.be.eq(true);

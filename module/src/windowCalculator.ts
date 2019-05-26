@@ -1,6 +1,7 @@
 import {define, inject, singleton} from "appolo";
-import {IFrequency, IOptions} from "./IOptions";
-import {Util} from "./util";
+import { IOptions} from "./common/IOptions";
+import {Util} from "appolo-utils";
+import {IRole} from "./common/IRole";
 
 
 @define()
@@ -9,7 +10,7 @@ export class WindowCalculator {
 
     @inject() private moduleOptions: IOptions;
 
-    public calcBucketInterval({interval, limit, bucket, spread}: Pick<IFrequency, 'interval' | 'limit' | 'bucket' | 'spread'>): number {
+    public calcBucketInterval({interval, limit, bucket, spread}: Pick<IRole, 'interval' | 'limit' | 'bucket' | 'spread'>): number {
 
         bucket = bucket || Math.floor(interval / this.moduleOptions.maxBuckets);
 
@@ -22,11 +23,11 @@ export class WindowCalculator {
         return bucket;
     }
 
-    public calcRateLimit({interval, limit, bucket, spread}: Pick<IFrequency, 'interval' | 'limit' | 'bucket' | 'spread'>): number {
+    public calcRateLimit({interval, limit, bucket, spread}: Pick<IRole, 'interval' | 'limit' | 'bucket' | 'spread'>): number {
         let rateLimit = 0;
 
         if (spread) {
-            rateLimit = typeof spread == "boolean" ? Util.toFixed((limit / interval) * bucket, 2) : spread;
+            rateLimit = typeof spread == "boolean" ? Util.numbers.toFixed((limit / interval) * bucket, 2) : spread;
         }
 
         return rateLimit;

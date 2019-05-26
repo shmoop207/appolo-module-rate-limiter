@@ -1,5 +1,5 @@
 import {module, Module, Util} from 'appolo';
-import {IOptions} from "./src/IOptions";
+import {IOptions} from "./src/common/IOptions";
 
 import * as _ from "lodash";
 import {RateLimiter} from "./src/rateLimiter";

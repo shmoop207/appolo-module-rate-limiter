@@ -3,7 +3,7 @@ import {App} from 'appolo';
 import {RedisModule} from '@appolo/redis';
 import {LoggerModule} from '@appolo/logger';
 import {IEnv} from "../env/IEnv";
-import {IOptions} from "../../src/IOptions";
+import {IOptions} from "../../src/common/IOptions";
 
 
 export = async function (app: App, env: IEnv, moduleOptions: IOptions) {

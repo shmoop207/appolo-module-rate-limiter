@@ -34,7 +34,6 @@ export = async function (app: App) {
 import {define, singleton,inject} from 'appolo'
 import {RateLimiter} from "@appolo/rate-limiter";
 
-
 @define()
 @singleton()
 export class SomeManager {
@@ -42,12 +41,11 @@ export class SomeManager {
     @inject() rateLimiter: RateLimiter;
 
     async checkLimits(): Promise<boolean> {
-        let result = await this.rateLimiter.frequency.reserve({
+        let result = await this.rateLimiter.reserve({
             key:"someKey",
-            limits:[{
+            roles:[{
                 interval:10 * 60 * 1000, //10 min
                 limit:100,
-                spread:true
             }]
         })
 
@@ -59,16 +57,18 @@ export class SomeManager {
 
 ## RateLimiter
 
-### `frequency.reserve(limits: ILimits)`
-reserve key using sliding window
+### `Reserve`
+reserve key and return results object of the key rate limit usage 
 #### Options
 - `key` - key string
-- `limits` - array of limits
+- `roles` - array of roles
     - `interval` -  number of miliseconds in a sliding window
     - `limit` -  max number of items in a sliding window
-    - `spread` - `true` to limit by rate per bucket spread evenly default `false`
+    - `spread` - `true` to spread the limit evenly across interval buckets -  default `false`
     - `reserve` - the amount items to reserve default `1`
     - `bucket` - bucket interval in milisec - if not defined will be set automatically
+    - `start` - if we in fixed windowx - start point of the interval default `Date.now()`
+- type - `RateLimitType`  - sliding window or fixed window - default sliding window
 
 #### Results 
 - `isValid` - true if all the limits are valid
@@ -85,7 +85,6 @@ reserve key using sliding window
 import {define, singleton,inject} from 'appolo'
 import {RateLimiter} from "@appolo/rate-limiter";
 
-
 @define()
 @singleton()
 export class SomeManager {
@@ -93,7 +92,7 @@ export class SomeManager {
     @inject() rateLimiter: RateLimiter;
 
     async checkLimits(): Promise<boolean> {
-        let result = await this.rateLimiter.frequency.reserve({
+        let result = await this.rateLimiter.reserve({
             key:"someKey",
             limits:[{
                 interval:10 * 60 * 1000, //10 min
@@ -109,31 +108,15 @@ export class SomeManager {
 
 ```
 
-### `frequency.check(limits: ILimits)`
-check key using sliding window the counters won't be updated
+### `Check`
+Checks current usage of the key the counters won't be updated
 #### Options
-same as `frequency.reserve` options
+same as `Reserve` options
 #### Results  
-same as `frequency.reserve` results
- 
-### `limit.reserve(limits: ILimits)`
- reserve key using fixed limit interval
-#### Options
-- `key` - key string
-- `limits` - array of limits
-    - `interval` -  number of miliseconds in a sliding window
-    - `limit` -  max number of items in a sliding window
-    - `spread` - `true` to limit by rate per bucket spread evenly default `false`
-    - `reserve` - the amount items to reserve default `1`
-    - `bucket` - bucket interval in milisec - if not defined will be set automatically
-    - `start` - start point of the interval default `Date.now()`
+same as `Reserve` results
 
-#### Results 
-same as `frequency.reserve` results
-
-### `limit.check(limits: ILimits)`
-check key using fixed limit interval the counters won't be updated
-#### Options
-same as `limit.reserve` options
-#### Results  
-same as `limit.reserve` results
+### `Cancel`
+cancel rate limit and clean all for given key
+```typescript
+await this.rateLimiter.clean("someKey")
+```

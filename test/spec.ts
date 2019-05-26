@@ -1,6 +1,6 @@
 import {App, createApp, Util} from 'appolo'
 import * as Q from 'bluebird'
-import {RateLimiter, RateLimiterModule} from "../index";
+import {RateLimiter, RateLimiterModule, RateLimitType} from "../index";
 import chai = require('chai');
 import    sinonChai = require("sinon-chai");
 
@@ -36,14 +36,14 @@ describe("Rate Limit", function () {
         let arr = Array(3).fill(1);
 
         let key = "test";
-        let params = [{
+        let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100,
             spread: true
         }];
 
 
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), {concurrency: 100});
+        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
@@ -57,7 +57,7 @@ describe("Rate Limit", function () {
 
         await Util.delay(5100);
 
-        let result2 = await handler.frequency.reserve(key, params);
+        let result2 = await handler.reserve({key, roles});
 
         result2.isValid.should.be.eq(true);
         result2.results[0].count.should.be.eq(3);
@@ -68,16 +68,16 @@ describe("Rate Limit", function () {
     it("should frequency check", async () => {
 
         let key = "test";
-        let params = [{
+        let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100,
             spread: true
         }];
 
 
-        await handler.frequency.reserve(key, params);
+        await handler.reserve({key, roles});
 
-        let result = await handler.frequency.check(key, params);
+        let result = await handler.check({key, roles});
 
         result.isValid.should.be.eq(true);
         result.results[0].count.should.be.eq(1);
@@ -88,13 +88,17 @@ describe("Rate Limit", function () {
 
         let arr = Array(3).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100,
-            spread: true
+            spread: true,
         }];
 
-        let results = await Q.map(arr, item => handler.limit.reserve(key, params), {concurrency: 100});
+        let results = await Q.map(arr, item => handler.reserve({
+            key,
+            roles,
+            type: RateLimitType.FixedWindow
+        }), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
@@ -108,7 +112,7 @@ describe("Rate Limit", function () {
 
         await Util.delay(5100);
 
-        let result2 = await handler.limit.reserve(key, params);
+        let result2 = await handler.reserve({key, roles, type: RateLimitType.FixedWindow});
 
         result2.isValid.should.be.eq(true);
         result2.results[0].count.should.be.eq(3);
@@ -120,7 +124,7 @@ describe("Rate Limit", function () {
 
         let arr = Array(3).fill(1);
         let key = "test";
-        let params = [{
+        let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100,
             spread: 1.67
@@ -130,7 +134,7 @@ describe("Rate Limit", function () {
             spread: 1
         }]
 
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), {concurrency: 100});
+        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(false);
@@ -151,14 +155,14 @@ describe("Rate Limit", function () {
 
         await Util.delay(1500);
 
-        let result2 = await handler.frequency.reserve(key, params);
+        let result2 = await handler.reserve({key, roles});
 
         result2.isValid.should.be.eq(false);
         result2.results.length.should.be.eq(1);
 
         await Util.delay(3500);
 
-        result2 = await handler.frequency.reserve(key, params);
+        result2 = await handler.reserve({key, roles});
 
         result2.results[0].count.should.be.eq(3);
 
@@ -171,13 +175,13 @@ describe("Rate Limit", function () {
         let arr = Array(5).fill(1);
 
         let key = "test";
-        let params = [{
+        let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100
         }];
 
 
-        let results = await Q.map(arr, item => handler.frequency.reserve(key, params), {concurrency: 100});
+        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);
