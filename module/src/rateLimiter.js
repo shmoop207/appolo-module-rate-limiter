@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
 const appolo_1 = require("appolo");
+const redis_1 = require("@appolo/redis");
 const rateLimitType_1 = require("./common/rateLimitType");
 let RateLimiter = class RateLimiter {
     reserve({ key, roles, type = rateLimitType_1.RateLimitType.SlidingWindow }) {
@@ -20,13 +21,16 @@ let RateLimiter = class RateLimiter {
     async clear(key) {
         await this.redisProvider.delPattern(`${this.moduleOptions.keyPrefix}*{${key}}*`);
     }
+    get redisProvider() {
+        return this._redisProvider;
+    }
 };
 tslib_1.__decorate([
     appolo_1.inject()
 ], RateLimiter.prototype, "moduleOptions", void 0);
 tslib_1.__decorate([
-    appolo_1.inject()
-], RateLimiter.prototype, "redisProvider", void 0);
+    appolo_1.inject(redis_1.RedisProvider)
+], RateLimiter.prototype, "_redisProvider", void 0);
 tslib_1.__decorate([
     appolo_1.inject()
 ], RateLimiter.prototype, "rateLimiterMarshal", void 0);

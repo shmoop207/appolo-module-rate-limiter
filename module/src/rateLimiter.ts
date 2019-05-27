@@ -11,7 +11,7 @@ import {IResults} from "./common/IResults";
 export class RateLimiter {
 
     @inject() private moduleOptions: IOptions;
-    @inject() private redisProvider: RedisProvider;
+    @inject(RedisProvider) private _redisProvider: RedisProvider;
     @inject() private rateLimiterMarshal: RateLimiterMarshal;
 
 
@@ -38,6 +38,10 @@ export class RateLimiter {
 
     public async clear(key: string) {
         await this.redisProvider.delPattern(`${this.moduleOptions.keyPrefix}*{${key}}*`)
+    }
+
+    public get redisProvider(): RedisProvider {
+        return this._redisProvider
     }
 
 }
