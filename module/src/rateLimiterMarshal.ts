@@ -37,15 +37,22 @@ export class RateLimiterMarshal {
 
             spread = this.windowCalculator.calcRateLimit({interval, limit, spread, bucket});
 
-            dto.push({
+            let now = Date.now();
+            let dtoParams = {
                 window: bucket,
                 interval: role.interval,
                 limit: role.limit,
                 reserve: role.reserve || 1,
                 rateLimit: spread.toString(),
                 check: check,
-                maxWindow: type == RateLimitType.FixedWindow ? (role.start || Date.now() + role.interval) : 0
-            });
+                maxWindow: type == RateLimitType.FixedWindow ? ((role.start || now) + role.interval) : 0
+            };
+
+            if (dtoParams.maxWindow && dtoParams.maxWindow <= now) {
+                dtoParams.maxWindow = now + interval;
+            }
+
+            dto.push(dtoParams);
         }
 
         return dto;
