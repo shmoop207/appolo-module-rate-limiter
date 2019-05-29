@@ -12,6 +12,7 @@ export interface IRole {
 
 export interface IRoles {
     key: string,
+    slim?: boolean
     roles: IRole[],
     type?: RateLimitType
 }

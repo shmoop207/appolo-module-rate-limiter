@@ -12,5 +12,5 @@ export interface IResult {
 
 export interface IResults {
     isValid: boolean,
-    results: IResult[]
+    results?: IResult[]
 }

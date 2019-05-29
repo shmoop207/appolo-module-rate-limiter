@@ -55,7 +55,7 @@ describe("Rate Limit", function () {
         result.isValid.should.be.eq(true);
         result.results[0].count.should.be.eq(1);
     });
-    it.only("should limit cap", async () => {
+    it("should limit cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
         let roles = [{

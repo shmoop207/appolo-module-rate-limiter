@@ -4,10 +4,10 @@ const tslib_1 = require("tslib");
 const appolo_1 = require("appolo");
 const rateLimitType_1 = require("./common/rateLimitType");
 let RateLimiterMarshal = class RateLimiterMarshal {
-    prepareParams(roles, type, check) {
+    prepareParams(roles, check) {
         let dto = [];
-        for (let i = 0, len = roles.length; i < len; i++) {
-            let role = roles[i];
+        for (let i = 0, len = roles.roles.length; i < len; i++) {
+            let role = roles.roles[i];
             let { interval, limit, spread, bucket } = role;
             bucket = this.windowCalculator.calcBucketInterval({ interval, limit, spread, bucket });
             spread = this.windowCalculator.calcRateLimit({ interval, limit, spread, bucket });
@@ -19,10 +19,11 @@ let RateLimiterMarshal = class RateLimiterMarshal {
                 reserve: role.reserve || 1,
                 rateLimit: spread.toString(),
                 check: check,
-                maxWindow: type == rateLimitType_1.RateLimitType.FixedWindow ? ((role.start || now) + role.interval) : 0
+                slim: !!roles.slim,
+                maxWindow: roles.type == rateLimitType_1.RateLimitType.FixedWindow ? ((role.start || now) + role.interval) : 0
             };
-            if (dtoParams.maxWindow && dtoParams.maxWindow <= now) {
-                dtoParams.maxWindow = now + interval;
+            if (dtoParams.maxWindow && dtoParams.maxWindow < now) {
+                throw new Error("start time + interval is lower then current date");
             }
             dto.push(dtoParams);
         }
@@ -33,18 +34,20 @@ let RateLimiterMarshal = class RateLimiterMarshal {
         let dto = [];
         for (let i = 0, len = results.length; i < len; i++) {
             let item = results[i], param = params[i];
-            dto.push({
-                count: item[0],
-                bucket: param.window,
-                remaining: param.limit - (item[0]),
-                limit: param.limit,
-                rateLimit: parseFloat(param.rateLimit),
-                rate: parseFloat(item[1]),
-                isValid: !!item[2],
-                reset: item[3],
-                retry: item[4]
-            });
-            if (!item[2]) {
+            if (!param.slim) {
+                dto.push({
+                    count: item[1],
+                    bucket: param.window,
+                    remaining: param.limit - (item[1]),
+                    limit: param.limit,
+                    rateLimit: parseFloat(param.rateLimit),
+                    rate: parseFloat(item[2]),
+                    isValid: !!item[0],
+                    reset: item[3],
+                    retry: item[4]
+                });
+            }
+            if (!item[0]) {
                 isValid = false;
             }
         }

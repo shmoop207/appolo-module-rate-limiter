@@ -15,25 +15,29 @@ export class RateLimiter {
     @inject() private rateLimiterMarshal: RateLimiterMarshal;
 
 
-    public reserve({key, roles, type = RateLimitType.SlidingWindow}: IRoles) {
-        return this._run({key, roles, type, check: false})
+    public reserve(roles: IRoles) {
+        return this._run(roles, false)
     }
 
-    public check({key, roles, type = RateLimitType.SlidingWindow}: IRoles) {
-        return this._run({key, roles, type, check: true})
+    public check(roles: IRoles) {
+        return this._run(roles, true)
     }
 
-    private async _run({key, roles, type, check}: IRoles & { check: boolean }): Promise<IResults> {
+    private async _run(roles: IRoles, check: boolean): Promise<IResults> {
 
-        let redisKey = `${this.moduleOptions.keyPrefix}:${type == RateLimitType.FixedWindow ? "lmt" : "frq"}:{${key}}`;
+        let redisKey = this._createKey(roles);
 
-        let params = this.rateLimiterMarshal.prepareParams(roles, type, check);
+        let params = this.rateLimiterMarshal.prepareParams(roles, check);
 
         let results = await this.redisProvider.runScript<number[][]>("slidingWindow", [redisKey], [JSON.stringify(params)], false);
 
         let dto = this.rateLimiterMarshal.prepareResults(params, results);
 
         return dto;
+    }
+
+    private _createKey(roles: IRoles): string {
+        return `${this.moduleOptions.keyPrefix}:${roles.type == RateLimitType.FixedWindow ? "lmt" : "frq"}:{${roles.key}}`;
     }
 
     public async clear(key: string) {

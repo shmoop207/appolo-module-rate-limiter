@@ -5,18 +5,21 @@ const appolo_1 = require("appolo");
 const redis_1 = require("@appolo/redis");
 const rateLimitType_1 = require("./common/rateLimitType");
 let RateLimiter = class RateLimiter {
-    reserve({ key, roles, type = rateLimitType_1.RateLimitType.SlidingWindow }) {
-        return this._run({ key, roles, type, check: false });
+    reserve(roles) {
+        return this._run(roles, false);
     }
-    check({ key, roles, type = rateLimitType_1.RateLimitType.SlidingWindow }) {
-        return this._run({ key, roles, type, check: true });
+    check(roles) {
+        return this._run(roles, true);
     }
-    async _run({ key, roles, type, check }) {
-        let redisKey = `${this.moduleOptions.keyPrefix}:${type == rateLimitType_1.RateLimitType.FixedWindow ? "lmt" : "frq"}:{${key}}`;
-        let params = this.rateLimiterMarshal.prepareParams(roles, type, check);
+    async _run(roles, check) {
+        let redisKey = this._createKey(roles);
+        let params = this.rateLimiterMarshal.prepareParams(roles, check);
         let results = await this.redisProvider.runScript("slidingWindow", [redisKey], [JSON.stringify(params)], false);
         let dto = this.rateLimiterMarshal.prepareResults(params, results);
         return dto;
+    }
+    _createKey(roles) {
+        return `${this.moduleOptions.keyPrefix}:${roles.type == rateLimitType_1.RateLimitType.FixedWindow ? "lmt" : "frq"}:{${roles.key}}`;
     }
     async clear(key) {
         await this.redisProvider.delPattern(`${this.moduleOptions.keyPrefix}*{${key}}*`);

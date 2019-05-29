@@ -59,7 +59,7 @@ for i, item in ipairs(limits) do
 
             if item.maxWindow > 0 then
                 shouldExpire = (redis.call("PTTL", setKey) <= 0);
-                expire =  item.maxWindow - mili;
+                expire = math.max(item.maxWindow - mili, 10);
             end
 
             redis.call("ZADD", setKey, currentWindow, currentWindow)
@@ -77,7 +77,12 @@ for i, item in ipairs(limits) do
         count = redis.call("HINCRBY", hashKey, "counter", item.reserve)
     end
 
-    table.insert(output, { count, tostring(rate), isValid, (item.interval + lastUpdate) - mili, item.window + currentWindow - mili })
+    if item.slim then
+        table.insert(output, { isValid })
+    else
+        table.insert(output, { isValid, count, tostring(rate), (item.interval + lastUpdate) - mili, item.window + currentWindow - mili })
+
+    end
 
     if not isValid then
         break
