@@ -140,15 +140,16 @@ describe("Rate Limit", function () {
         results[1].results[0].rateLimit.should.be.eq(1.67);
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
-        await appolo_1.Util.delay(1000);
+        await appolo_1.Util.delay(500);
         let result2 = await handler.reserve({ key, roles });
         result2.isValid.should.be.eq(false);
         result2.results.length.should.be.eq(1);
-        await appolo_1.Util.delay(3500);
+        await appolo_1.Util.delay(5000);
         result2 = await handler.reserve({ key, roles });
         result2.results[0].count.should.be.eq(2);
         result2.results[1].count.should.be.eq(2);
         result2.results[0].remaining.should.be.eq(98);
+        result2.results[1].remaining.should.be.eq(58);
     });
     it("should  frequency cap no spread", async () => {
         let arr = Array(5).fill(1);

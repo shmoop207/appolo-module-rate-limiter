@@ -195,14 +195,14 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(1000);
+        await Util.delay(500);
 
         let result2 = await handler.reserve({key, roles});
 
         result2.isValid.should.be.eq(false);
         result2.results.length.should.be.eq(1);
 
-        await Util.delay(3500);
+        await Util.delay(5000);
 
         result2 = await handler.reserve({key, roles});
 
@@ -210,6 +210,7 @@ describe("Rate Limit", function () {
 
         result2.results[1].count.should.be.eq(2);
         result2.results[0].remaining.should.be.eq(98);
+        result2.results[1].remaining.should.be.eq(58);
     });
 
     it("should  frequency cap no spread", async () => {
