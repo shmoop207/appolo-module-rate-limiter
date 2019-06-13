@@ -14,6 +14,7 @@ interface ISlidingWindowParams {
     check: boolean
     maxWindow?: number
     slim?: boolean
+    force?: boolean
 }
 
 
@@ -47,6 +48,7 @@ export class RateLimiterMarshal {
                 rateLimit: spread.toString(),
                 check: check,
                 slim: !!roles.slim,
+                force: !!role.forceUpdate,
                 maxWindow: roles.type == RateLimitType.FixedWindow ? ((role.start || now) + role.interval) : 0
             };
 

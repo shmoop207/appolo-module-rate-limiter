@@ -20,6 +20,7 @@ let RateLimiterMarshal = class RateLimiterMarshal {
                 rateLimit: spread.toString(),
                 check: check,
                 slim: !!roles.slim,
+                force: !!role.forceUpdate,
                 maxWindow: roles.type == rateLimitType_1.RateLimitType.FixedWindow ? ((role.start || now) + role.interval) : 0
             };
             if (dtoParams.maxWindow && dtoParams.maxWindow < now) {

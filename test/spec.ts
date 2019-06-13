@@ -27,6 +27,7 @@ describe("Rate Limit", function () {
     });
 
     afterEach(async () => {
+
         await app.reset();
     });
 
@@ -46,21 +47,21 @@ describe("Rate Limit", function () {
         let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
-        results[1].isValid.should.be.eq(true);
+        results[1].isValid.should.be.eq(false);
         results[2].isValid.should.be.eq(false);
-        results[1].results[0].count.should.be.eq(2);
-        results[1].results[0].remaining.should.be.eq(98);
-        results[1].results[0].rate.should.be.eq(1);
+        results[1].results[0].count.should.be.eq(1);
+        results[1].results[0].remaining.should.be.eq(99);
+        results[1].results[0].rate.should.be.eq(2);
         results[1].results[0].rateLimit.should.be.eq(1.67);
         results[2].results[0].rate.should.be.eq(2);
-        results[2].results[0].count.should.be.eq(2);
+        results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(5100);
+        await Util.delay(5300);
 
         let result2 = await handler.reserve({key, roles});
 
         result2.isValid.should.be.eq(true);
-        result2.results[0].count.should.be.eq(3);
+        result2.results[0].count.should.be.eq(2);
         result2.results[0].reset.should.be.gt((1000 * 60 * 5) - 5000);
 
     });
@@ -76,6 +77,8 @@ describe("Rate Limit", function () {
 
 
         await handler.reserve({key, roles});
+
+        await Util.delay(5300);
 
         let result = await handler.check({key, roles});
 
@@ -101,24 +104,65 @@ describe("Rate Limit", function () {
         }), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
-        results[1].isValid.should.be.eq(true);
+        results[1].isValid.should.be.eq(false);
         results[2].isValid.should.be.eq(false);
-        results[1].results[0].count.should.be.eq(2);
-        results[1].results[0].remaining.should.be.eq(98);
-        results[1].results[0].rate.should.be.eq(1);
+        results[1].results[0].count.should.be.eq(1);
+        results[1].results[0].remaining.should.be.eq(99);
+        results[1].results[0].rate.should.be.eq(2);
         results[1].results[0].rateLimit.should.be.eq(1.67);
         results[2].results[0].rate.should.be.eq(2);
-        results[2].results[0].count.should.be.eq(2);
+        results[2].results[0].count.should.be.eq(1);
 
         await Util.delay(5100);
 
         let result2 = await handler.reserve({key, roles, type: RateLimitType.FixedWindow});
 
         result2.isValid.should.be.eq(true);
-        result2.results[0].count.should.be.eq(3);
-        result2.results[0].remaining.should.be.eq(97);
+        result2.results[0].count.should.be.eq(2);
+        result2.results[0].remaining.should.be.eq(98);
         result2.results[0].reset.should.be.lte((1000 * 60 * 5) - 5000);
     });
+
+
+    it("should limit cap force update", async () => {
+
+
+        let arr = Array(3).fill(1);
+        let key = "test";
+        let roles = [{
+            interval: 1000 * 60 * 5,
+            forceUpdate: true,
+            limit: 100,
+            spread: true,
+        }];
+
+        let results = await Q.map(arr, item => handler.reserve({
+            key,
+            roles,
+            type: RateLimitType.FixedWindow
+        }), {concurrency: 100});
+
+        results[0].isValid.should.be.eq(true);
+        results[1].isValid.should.be.eq(false);
+        results[2].isValid.should.be.eq(false);
+        results[1].results[0].count.should.be.eq(2);
+        results[1].results[0].remaining.should.be.eq(98);
+        results[1].results[0].rate.should.be.eq(2);
+        results[1].results[0].rateLimit.should.be.eq(1.67);
+        results[2].results[0].rate.should.be.eq(3);
+        results[2].results[0].count.should.be.eq(3);
+
+        await Util.delay(5100);
+
+        let result2 = await handler.reserve({key, roles, type: RateLimitType.FixedWindow});
+
+        result2.isValid.should.be.eq(false);
+        result2.results[0].count.should.be.eq(4);
+        result2.results[0].rate.should.be.eq(2);
+        result2.results[0].remaining.should.be.eq(96);
+        result2.results[0].reset.should.be.lte((1000 * 60 * 5) - 5000);
+    });
+
 
     it("should multi frequency cap", async () => {
 
@@ -140,20 +184,18 @@ describe("Rate Limit", function () {
         results[1].isValid.should.be.eq(false);
         results[2].isValid.should.be.eq(false);
 
-        results[1].results[0].isValid.should.be.eq(true);
-        results[1].results[1].isValid.should.be.eq(false);
+        results[1].results[0].isValid.should.be.eq(false);
 
         results[2].isValid.should.be.eq(false);
-        results[1].results[0].count.should.be.eq(2);
-        results[1].results[1].count.should.be.eq(1);
+        results[1].results[0].count.should.be.eq(1);
 
-        results[1].results[0].remaining.should.be.eq(98);
-        results[1].results[0].rate.should.be.eq(1);
+        results[1].results[0].remaining.should.be.eq(99);
+        results[1].results[0].rate.should.be.eq(2);
         results[1].results[0].rateLimit.should.be.eq(1.67);
         results[2].results[0].rate.should.be.eq(2);
-        results[2].results[0].count.should.be.eq(2);
+        results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(1500);
+        await Util.delay(1000);
 
         let result2 = await handler.reserve({key, roles});
 
@@ -164,10 +206,10 @@ describe("Rate Limit", function () {
 
         result2 = await handler.reserve({key, roles});
 
-        result2.results[0].count.should.be.eq(3);
+        result2.results[0].count.should.be.eq(2);
 
         result2.results[1].count.should.be.eq(2);
-        result2.results[0].remaining.should.be.eq(97);
+        result2.results[0].remaining.should.be.eq(98);
     });
 
     it("should  frequency cap no spread", async () => {

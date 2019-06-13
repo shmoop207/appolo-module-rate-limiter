@@ -8,6 +8,7 @@ export interface IRole {
     bucket?: number
     reserve?: number
     start?: number
+    forceUpdate?: boolean
 }
 
 export interface IRoles {

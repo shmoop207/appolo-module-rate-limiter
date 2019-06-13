@@ -27,6 +27,13 @@ for i, item in ipairs(limits) do
             end
 
             redis.call("ZREMRANGEBYSCORE", setKey, "-inf", startWindow)
+
+            local firstWindow = redis.call("ZRANGE", setKey, 0, 0)
+
+            if (#firstWindow > 0) then
+                redis.call("HSETNX", hashKey, "firstWindow", firstWindow[1])
+            end
+
         end
     end
 
@@ -42,15 +49,18 @@ for i, item in ipairs(limits) do
 
     if rateLimit > 0 then
 
-        local prevBucketCounter = tonumber(redis.call("HGET", hashKey, currentWindow - item.window) or '0');
-        local currentBucketCounter = tonumber(redis.call("HGET", hashKey, currentWindow) or '0');
-        rate = ((prevBucketCounter * ((item.window - (mili - currentWindow)) / item.window)) + (currentBucketCounter));
+        local firstWindow = tonumber(redis.call("HGET", hashKey, "firstWindow")) or currentWindow;
 
-        if (rate > rateLimit or currentBucketCounter >= rateLimit) then
+        local windowsNum = (((currentWindow - firstWindow) / item.window) + 1);
+
+        rate = (count + item.reserve) / windowsNum
+
+        if (rate > rateLimit) then
             isValid = false
         end
     end
-    if isValid == true and not item.check then
+
+    if (isValid == true or item.force) and not item.check then
 
         if currentWindow > lastUpdate then
 
@@ -63,6 +73,7 @@ for i, item in ipairs(limits) do
             end
 
             redis.call("ZADD", setKey, currentWindow, currentWindow)
+            redis.call("HSETNX", hashKey, "firstWindow", currentWindow)
 
             if shouldExpire then
                 redis.call("HSET", hashKey, "lastUpdate", mili)
