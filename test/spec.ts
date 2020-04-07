@@ -195,7 +195,7 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(500);
+        await Util.delay(1000);
 
         let result2 = await handler.reserve({key, roles});
 
