@@ -1,4 +1,4 @@
-import {IEnv as RootEnv} from 'appolo';
+import {IEnv as RootEnv} from '@appolo/engine';
 import {IOptions} from "../../src/common/IOptions";
 
 

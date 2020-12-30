@@ -1,4 +1,4 @@
-import {define, inject, singleton} from "appolo";
+import {define, inject, singleton} from "@appolo/inject";
 import {WindowCalculator} from "./windowCalculator";
 import {IRole, IRoles} from "./common/IRole";
 import {RateLimitType} from "./common/rateLimitType";

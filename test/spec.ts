@@ -1,5 +1,5 @@
-import {App, createApp, Util} from 'appolo'
-import * as Q from 'bluebird'
+import {App, createApp, Util} from '@appolo/engine'
+import {Promises} from '@appolo/utils'
 import {RateLimiter, RateLimiterModule, RateLimitType} from "../index";
 import chai = require('chai');
 import    sinonChai = require("sinon-chai");
@@ -15,9 +15,9 @@ describe("Rate Limit", function () {
 
     beforeEach(async () => {
 
-        app = createApp({root: __dirname, environment: "production", port: 8181});
+        app = createApp({root: __dirname, environment: "production"});
 
-        await app.module(new RateLimiterModule({connection: process.env.REDIS}));
+        app.module.use(RateLimiterModule.for({connection: process.env.REDIS}));
 
         await app.launch();
 
@@ -44,7 +44,7 @@ describe("Rate Limit", function () {
         }];
 
 
-        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
+        let results = await Promises.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(false);
@@ -56,7 +56,7 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(5300);
+        await Promises.delay(5300);
 
         let result2 = await handler.reserve({key, roles});
 
@@ -78,7 +78,7 @@ describe("Rate Limit", function () {
 
         await handler.reserve({key, roles});
 
-        await Util.delay(5300);
+        await Promises.delay(5300);
 
         let result = await handler.check({key, roles});
 
@@ -97,7 +97,7 @@ describe("Rate Limit", function () {
             spread: true,
         }];
 
-        let results = await Q.map(arr, item => handler.reserve({
+        let results = await Promises.map(arr, item => handler.reserve({
             key,
             roles,
             type: RateLimitType.FixedWindow
@@ -113,7 +113,7 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(5100);
+        await Promises.delay(5100);
 
         let result2 = await handler.reserve({key, roles, type: RateLimitType.FixedWindow});
 
@@ -136,7 +136,7 @@ describe("Rate Limit", function () {
             spread: true,
         }];
 
-        let results = await Q.map(arr, item => handler.reserve({
+        let results = await Promises.map(arr, item => handler.reserve({
             key,
             roles,
             type: RateLimitType.FixedWindow
@@ -152,7 +152,7 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(3);
         results[2].results[0].count.should.be.eq(3);
 
-        await Util.delay(5100);
+        await Promises.delay(5100);
 
         let result2 = await handler.reserve({key, roles, type: RateLimitType.FixedWindow});
 
@@ -178,7 +178,7 @@ describe("Rate Limit", function () {
             spread: 1
         }]
 
-        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
+        let results = await Promises.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(false);
@@ -195,14 +195,14 @@ describe("Rate Limit", function () {
         results[2].results[0].rate.should.be.eq(2);
         results[2].results[0].count.should.be.eq(1);
 
-        await Util.delay(1000);
+        await Promises.delay(1000);
 
         let result2 = await handler.reserve({key, roles});
 
         result2.isValid.should.be.eq(false);
         result2.results.length.should.be.eq(1);
 
-        await Util.delay(5000);
+        await Promises.delay(5000);
 
         result2 = await handler.reserve({key, roles});
 
@@ -224,7 +224,7 @@ describe("Rate Limit", function () {
         }];
 
 
-        let results = await Q.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
+        let results = await Promises.map(arr, item => handler.reserve({key, roles}), {concurrency: 100});
 
         results[0].isValid.should.be.eq(true);
         results[1].isValid.should.be.eq(true);

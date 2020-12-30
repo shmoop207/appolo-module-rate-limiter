@@ -1,4 +1,4 @@
-import {define, inject, singleton} from "appolo";
+import {define, inject, singleton} from "@appolo/inject";
 import {IOptions} from "./common/IOptions";
 import {RedisProvider} from "@appolo/redis";
 import {RateLimiterMarshal} from "./rateLimiterMarshal";

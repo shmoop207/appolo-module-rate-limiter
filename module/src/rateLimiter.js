@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RateLimiter = void 0;
 const tslib_1 = require("tslib");
-const appolo_1 = require("appolo");
+const inject_1 = require("@appolo/inject");
 const redis_1 = require("@appolo/redis");
 const rateLimitType_1 = require("./common/rateLimitType");
 let RateLimiter = class RateLimiter {
@@ -29,17 +30,17 @@ let RateLimiter = class RateLimiter {
     }
 };
 tslib_1.__decorate([
-    appolo_1.inject()
+    inject_1.inject()
 ], RateLimiter.prototype, "moduleOptions", void 0);
 tslib_1.__decorate([
-    appolo_1.inject(redis_1.RedisProvider)
+    inject_1.inject(redis_1.RedisProvider)
 ], RateLimiter.prototype, "_redisProvider", void 0);
 tslib_1.__decorate([
-    appolo_1.inject()
+    inject_1.inject()
 ], RateLimiter.prototype, "rateLimiterMarshal", void 0);
 RateLimiter = tslib_1.__decorate([
-    appolo_1.define(),
-    appolo_1.singleton()
+    inject_1.define(),
+    inject_1.singleton()
 ], RateLimiter);
 exports.RateLimiter = RateLimiter;
 //# sourceMappingURL=rateLimiter.js.map

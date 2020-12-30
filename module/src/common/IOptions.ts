@@ -1,6 +1,5 @@
-import {IModuleOptions} from 'appolo/index';
 
-export interface IOptions extends IModuleOptions {
+export interface IOptions  {
     id?: string
     connection?: string;
     keyPrefix?: string;

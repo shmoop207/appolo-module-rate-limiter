@@ -1,6 +1,6 @@
-import {define, inject, singleton} from "appolo";
+import {define, inject, singleton} from "@appolo/inject";
 import { IOptions} from "./common/IOptions";
-import {Util} from "appolo-utils";
+import {Util} from "@appolo/utils";
 import {IRole} from "./common/IRole";
 
 

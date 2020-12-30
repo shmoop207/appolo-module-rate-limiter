@@ -1,4 +1,4 @@
-import {module, Module, Util} from 'appolo';
+import {module, Module, IModuleParams} from '@appolo/engine';
 import {IOptions} from "./src/common/IOptions";
 
 import * as _ from "lodash";
@@ -15,8 +15,8 @@ export class RateLimiterModule extends Module<IOptions> {
 
     };
 
-    constructor(options: IOptions) {
-        super(options)
+    public static for(options?: IOptions): IModuleParams {
+        return {type: RateLimiterModule, options}
     }
 
     public get exports() {

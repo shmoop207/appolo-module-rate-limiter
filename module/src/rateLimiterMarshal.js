@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RateLimiterMarshal = void 0;
 const tslib_1 = require("tslib");
-const appolo_1 = require("appolo");
+const inject_1 = require("@appolo/inject");
 const rateLimitType_1 = require("./common/rateLimitType");
 let RateLimiterMarshal = class RateLimiterMarshal {
     prepareParams(roles, check) {
@@ -59,11 +60,11 @@ let RateLimiterMarshal = class RateLimiterMarshal {
     }
 };
 tslib_1.__decorate([
-    appolo_1.inject()
+    inject_1.inject()
 ], RateLimiterMarshal.prototype, "windowCalculator", void 0);
 RateLimiterMarshal = tslib_1.__decorate([
-    appolo_1.define(),
-    appolo_1.singleton()
+    inject_1.define(),
+    inject_1.singleton()
 ], RateLimiterMarshal);
 exports.RateLimiterMarshal = RateLimiterMarshal;
 //# sourceMappingURL=rateLimiterMarshal.js.map
