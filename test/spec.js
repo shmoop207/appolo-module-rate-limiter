@@ -1,16 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const engine_1 = require("@appolo/engine");
+const core_1 = require("@appolo/core");
 const utils_1 = require("@appolo/utils");
 const index_1 = require("../index");
 const chai = require("chai");
 const sinonChai = require("sinon-chai");
+const mocha_1 = require("mocha");
+const chaiHttp = require("chai-http");
+chai.use(chaiHttp);
 let should = require('chai').should();
 chai.use(sinonChai);
+describe("Rate Limit Middleware", function () {
+    let app;
+    beforeEach(async () => {
+        app = core_1.createApp({ root: __dirname + "/mock", environment: "production", port: 8182 });
+        app.module.use(index_1.RateLimiterModule.for({ connection: process.env.REDIS }));
+        await app.launch();
+    });
+    afterEach(async () => {
+        await app.reset();
+    });
+    mocha_1.it("Should test middleware", async () => {
+        const arr = Array(6).fill(1);
+        const results = await utils_1.Promises.map(arr, async () => {
+            console.log("sent");
+            const res = await chai.request(app.route.handle).get('/hello_world');
+            return res.status;
+        });
+        results[0].should.be.eq(200);
+        results[1].should.be.eq(200);
+        results[2].should.be.eq(200);
+        results[3].should.be.eq(200);
+        results[4].should.be.eq(200);
+        results[5].should.be.eq(429);
+    });
+});
 describe("Rate Limit", function () {
     let app, handler;
     beforeEach(async () => {
-        app = engine_1.createApp({ root: __dirname, environment: "production" });
+        app = core_1.createApp({ root: __dirname, environment: "production" });
         app.module.use(index_1.RateLimiterModule.for({ connection: process.env.REDIS }));
         await app.launch();
         handler = app.injector.get(index_1.RateLimiter);
@@ -19,7 +47,7 @@ describe("Rate Limit", function () {
     afterEach(async () => {
         await app.reset();
     });
-    it("should frequency cap", async () => {
+    mocha_1.it("should frequency cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
         let roles = [{
@@ -43,7 +71,7 @@ describe("Rate Limit", function () {
         result2.results[0].count.should.be.eq(2);
         result2.results[0].reset.should.be.gt((1000 * 60 * 5) - 5000);
     });
-    it("should frequency check", async () => {
+    mocha_1.it("should frequency check", async () => {
         let key = "test";
         let roles = [{
                 interval: 1000 * 60 * 5,
@@ -56,7 +84,7 @@ describe("Rate Limit", function () {
         result.isValid.should.be.eq(true);
         result.results[0].count.should.be.eq(1);
     });
-    it("should limit cap", async () => {
+    mocha_1.it("should limit cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
         let roles = [{
@@ -85,7 +113,7 @@ describe("Rate Limit", function () {
         result2.results[0].remaining.should.be.eq(98);
         result2.results[0].reset.should.be.lte((1000 * 60 * 5) - 5000);
     });
-    it("should limit cap force update", async () => {
+    mocha_1.it("should limit cap force update", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
         let roles = [{
@@ -116,7 +144,7 @@ describe("Rate Limit", function () {
         result2.results[0].remaining.should.be.eq(96);
         result2.results[0].reset.should.be.lte((1000 * 60 * 5) - 5000);
     });
-    it("should multi frequency cap", async () => {
+    mocha_1.it("should multi frequency cap", async () => {
         let arr = Array(3).fill(1);
         let key = "test";
         let roles = [{
@@ -151,7 +179,7 @@ describe("Rate Limit", function () {
         result2.results[0].remaining.should.be.eq(98);
         result2.results[1].remaining.should.be.eq(58);
     });
-    it("should  frequency cap no spread", async () => {
+    mocha_1.it("should  frequency cap no spread", async () => {
         let arr = Array(5).fill(1);
         let key = "test";
         let roles = [{

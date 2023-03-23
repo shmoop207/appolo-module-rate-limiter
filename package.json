@@ -11,10 +11,13 @@
   ],
   "main": "index.js",
   "dependencies": {
+    "@appolo/core": "^8.0.10",
+    "@appolo/engine": "^8.0.19",
     "@appolo/logger": "^8.0.5",
     "@appolo/redis": "^8.0.1",
-    "@appolo/engine": "^8.0.19",
-    "@appolo/utils": "^8.0.7"
+    "@appolo/route": "^8.0.10",
+    "@appolo/utils": "^8.0.7",
+    "chai-http": "^4.3.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",

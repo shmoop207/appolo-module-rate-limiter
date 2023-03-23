@@ -3,6 +3,7 @@ import {IOptions} from "./src/common/IOptions";
 
 import * as _ from "lodash";
 import {RateLimiter} from "./src/rateLimiter";
+import {RateLimiterMiddleware} from "./src/rateLimiterMiddleware";
 
 @module()
 export class RateLimiterModule extends Module<IOptions> {
@@ -20,7 +21,9 @@ export class RateLimiterModule extends Module<IOptions> {
     }
 
     public get exports() {
-        return [{id: this.moduleOptions.id, type: RateLimiter}];
+        return [{id: this.moduleOptions.id, type: RateLimiter},
+            RateLimiterMiddleware
+        ];
 
     }
 
