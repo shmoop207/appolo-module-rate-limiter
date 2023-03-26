@@ -35,7 +35,6 @@ describe("Rate Limit Middleware", function () {
         const arr = Array(6).fill(1);
 
         const results = await Promises.map(arr, async () => {
-            console.log("sent");
             const res = await chai.request(app.route.handle).get('/hello_world');
             return res.status;
         });
@@ -211,7 +210,7 @@ describe("Rate Limit", function () {
     it("should multi frequency cap", async () => {
 
         let arr = Array(3).fill(1);
-        let key = "test";
+        let key = "test2";
         let roles = [{
             interval: 1000 * 60 * 5,
             limit: 100,

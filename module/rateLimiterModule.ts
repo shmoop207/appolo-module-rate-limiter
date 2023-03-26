@@ -1,7 +1,6 @@
 import {module, Module, IModuleParams} from '@appolo/engine';
 import {IOptions} from "./src/common/IOptions";
 
-import * as _ from "lodash";
 import {RateLimiter} from "./src/rateLimiter";
 import {RateLimiterMiddleware} from "./src/rateLimiterMiddleware";
 

@@ -22,11 +22,11 @@ let WindowCalculator = class WindowCalculator {
     }
 };
 tslib_1.__decorate([
-    inject_1.inject()
+    (0, inject_1.inject)()
 ], WindowCalculator.prototype, "moduleOptions", void 0);
 WindowCalculator = tslib_1.__decorate([
-    inject_1.define(),
-    inject_1.singleton()
+    (0, inject_1.define)(),
+    (0, inject_1.singleton)()
 ], WindowCalculator);
 exports.WindowCalculator = WindowCalculator;
 //# sourceMappingURL=windowCalculator.js.map

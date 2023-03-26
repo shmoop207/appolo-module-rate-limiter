@@ -1,11 +1,10 @@
 import {define, singleton, inject} from '@appolo/inject';
-import {Middleware, IResponse, IRequest, NextFn, next, req, res, context} from '@appolo/route';
+import {StaticMiddleware, IResponse, IRequest, NextFn, next, req, res, context,HttpError} from '@appolo/route';
 import {RateLimiter} from "./rateLimiter";
 import {IRole, IRoles} from "./common/IRole";
 
 @define()
-@singleton()
-export class RateLimiterMiddleware extends Middleware {
+export class RateLimiterMiddleware extends  StaticMiddleware{
     @inject() rateLimiter: RateLimiter;
 
     public async run(@context() context: { keyGenerator: (req: IRequest) => string, config: IRole }, @req() req: IRequest, @res() res: IResponse, @next() next: NextFn) {
@@ -20,7 +19,8 @@ export class RateLimiterMiddleware extends Middleware {
         })
 
         if (!result.isValid) {
-            return this.sendError("Too many requests", 429);
+
+            return next(new HttpError(429,"Too many requests"));
         }
         next();
 

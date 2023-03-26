@@ -30,17 +30,17 @@ let RateLimiter = class RateLimiter {
     }
 };
 tslib_1.__decorate([
-    inject_1.inject()
+    (0, inject_1.inject)()
 ], RateLimiter.prototype, "moduleOptions", void 0);
 tslib_1.__decorate([
-    inject_1.inject(redis_1.RedisProvider)
+    (0, inject_1.inject)(redis_1.RedisProvider)
 ], RateLimiter.prototype, "_redisProvider", void 0);
 tslib_1.__decorate([
-    inject_1.inject()
+    (0, inject_1.inject)()
 ], RateLimiter.prototype, "rateLimiterMarshal", void 0);
 RateLimiter = tslib_1.__decorate([
-    inject_1.define(),
-    inject_1.singleton()
+    (0, inject_1.define)(),
+    (0, inject_1.singleton)()
 ], RateLimiter);
 exports.RateLimiter = RateLimiter;
 //# sourceMappingURL=rateLimiter.js.map
