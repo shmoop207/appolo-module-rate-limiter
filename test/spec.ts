@@ -1,13 +1,57 @@
-import {App, createApp, Util} from '@appolo/engine'
+import {App, createApp} from '@appolo/core'
 import {Promises} from '@appolo/utils'
 import {RateLimiter, RateLimiterModule, RateLimitType} from "../index";
 import chai = require('chai');
-import    sinonChai = require("sinon-chai");
+import sinonChai = require("sinon-chai");
+import {it} from "mocha";
+import chaiHttp = require('chai-http');
 
+chai.use(chaiHttp);
 
 let should = require('chai').should();
 chai.use(sinonChai);
 
+
+describe("Rate Limit Middleware", function () {
+    let app: App;
+
+    beforeEach(async () => {
+
+        app = createApp({root: __dirname + "/mock", environment: "production", port: 8182});
+
+        app.module.use(RateLimiterModule.for({connection: process.env.REDIS}));
+
+        await app.launch();
+    });
+
+    afterEach(async () => {
+
+        await app.reset();
+    });
+
+
+    it("Should test middleware", async () => {
+
+        const arr = Array(6).fill(1);
+
+        const results = await Promises.map(arr, async () => {
+            console.log("sent");
+            const res = await chai.request(app.route.handle).get('/hello_world');
+            return res.status;
+        });
+
+        results[0].should.be.eq(200);
+        results[1].should.be.eq(200);
+        results[2].should.be.eq(200);
+        results[3].should.be.eq(200);
+        results[4].should.be.eq(200);
+        results[5].should.be.eq(429);
+
+    });
+
+
+
+})
 
 describe("Rate Limit", function () {
 
