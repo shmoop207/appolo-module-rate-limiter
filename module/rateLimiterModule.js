@@ -26,7 +26,7 @@ let RateLimiterModule = RateLimiterModule_1 = class RateLimiterModule extends en
     }
 };
 RateLimiterModule = RateLimiterModule_1 = tslib_1.__decorate([
-    (0, engine_1.module)()
+    engine_1.module()
 ], RateLimiterModule);
 exports.RateLimiterModule = RateLimiterModule;
 //# sourceMappingURL=rateLimiterModule.js.map
