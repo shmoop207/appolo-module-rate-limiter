@@ -1,6 +1,6 @@
 {
   "name": "@appolo/rate-limiter",
-  "version": "8.0.1",
+  "version": "8.0.2",
   "description": "appolo rate-limiter module",
   "publishConfig": {
     "access": "public"
