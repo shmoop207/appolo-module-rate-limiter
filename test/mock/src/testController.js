@@ -10,17 +10,17 @@ let TestController = class TestController extends route_1.Controller {
     }
 };
 tslib_1.__decorate([
-    route_1.middleware(rateLimiterMiddleware_1.RateLimiterMiddleware.for({
+    (0, route_1.middleware)(rateLimiterMiddleware_1.RateLimiterMiddleware.for({
         config: {
             interval: 3 * 60 * 1000,
             limit: 5,
         },
         keyGenerator: (req) => "hardcoded_test_key"
     })),
-    route_1.get('/hello_world')
+    (0, route_1.get)('/hello_world')
 ], TestController.prototype, "helloWorld", null);
 TestController = tslib_1.__decorate([
-    route_1.controller()
+    (0, route_1.controller)()
 ], TestController);
 exports.TestController = TestController;
 //# sourceMappingURL=testController.js.map
