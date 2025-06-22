@@ -13,6 +13,7 @@ export = async function (app: App, env: IEnv, moduleOptions: IOptions) {
     }
 
     app.module.use(RedisModule.for({
+        ...(moduleOptions.redisOptions || {}),
         connection: moduleOptions.connection,
         scripts: [{name: "slidingWindow", path: __dirname + "../../../lua/slidingWindow.lua", args: 1}]
     }));

@@ -7,6 +7,7 @@ module.exports = async function (app, env, moduleOptions) {
     }
     app.module.use(redis_1.RedisModule.for({
         connection: moduleOptions.connection,
+        opts: moduleOptions.redisOpts,
         scripts: [{ name: "slidingWindow", path: __dirname + "../../../lua/slidingWindow.lua", args: 1 }]
     }));
 };
